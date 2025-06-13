@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Matemática</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Gaegu:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom font for the game's "hand-drawn" feel */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-gaegu {
+            font-family: 'Gaegu', cursive;
+        }
+        /* Simple animation for feedback message */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-sky-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Game Container -->
+    <div class="w-full max-w-sm mx-auto bg-white rounded-2xl shadow-2xl p-6 md:p-8 text-center border-4 border-blue-300">
+
+        <h1 class="text-3xl font-bold text-blue-600 mb-2">Desafio Matemático!</h1>
+        <p class="text-gray-500 mb-6">Resolva a conta para marcar pontos!</p>
+
+        <!-- Problem Display -->
+        <div id="problem-container" class="font-gaegu text-6xl text-gray-800 my-8 bg-amber-100 rounded-lg py-4">
+            <!-- Example: 10 + 5 = ? -->
+        </div>
+
+        <!-- Answer Input -->
+        <input type="number" id="answer-input" placeholder="?" class="w-full text-center text-3xl p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition">
+
+        <!-- Action Buttons -->
+        <div class="mt-6 grid grid-cols-1 gap-4">
+            <button id="check-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-transform transform hover:scale-105 shadow-md">
+                Verificar
+            </button>
+            <button id="next-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-transform transform hover:scale-105 shadow-md" style="display: none;">
+                Próxima Pergunta
+            </button>
+        </div>
+
+        <!-- Feedback Message -->
+        <div id="feedback-message" class="mt-6 h-8 text-2xl font-semibold">
+            <!-- Feedback will appear here -->
+        </div>
+
+        <!-- Score -->
+        <div class="mt-4 text-right">
+            <span class="font-bold text-lg text-gray-700">Pontos: <span id="score" class="text-green-600">0</span></span>
+        </div>
+
+    </div>
+
+    <script>
+        // DOM Element References
+        const problemContainer = document.getElementById('problem-container');
+        const answerInput = document.getElementById('answer-input');
+        const checkButton = document.getElementById('check-button');
+        const nextButton = document.getElementById('next-button');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const scoreDisplay = document.getElementById('score');
+
+        // Game State
+        let currentProblem = {};
+        let score = 0;
+        const MAX_NUMBER = 10; // Controls the difficulty (numbers will be between 1 and 10)
+
+        /**
+         * Generates a new random math problem.
+         */
+        function generateProblem() {
+            const num1 = Math.floor(Math.random() * MAX_NUMBER) + 1;
+            const num2 = Math.floor(Math.random() * MAX_NUMBER) + 1;
+            const operators = ['+', '×', '-'];
+            let operator = operators[Math.floor(Math.random() * operators.length)];
+
+            let n1 = num1, n2 = num2;
+            // Ensure subtraction results are not negative for simplicity
+            if (operator === '-' && n1 < n2) {
+                [n1, n2] = [n2, n1]; // Swap numbers
+            }
+            
+            let answer;
+            if (operator === '+') {
+                answer = n1 + n2;
+            } else if (operator === '×') {
+                answer = n1 * n2;
+            } else if (operator === '-') {
+                answer = n1 - n2;
+            }
+            
+            // Store the current problem details
+            currentProblem = { num1: n1, num2: n2, operator, answer };
+
+            // Display the problem
+            problemContainer.textContent = `${n1} ${operator} ${n2} = ?`;
+            
+            // Reset UI for the new problem
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'mt-6 h-8 text-2xl font-semibold'; // Reset color
+            answerInput.value = '';
+            answerInput.disabled = false;
+            answerInput.focus();
+
+            checkButton.style.display = 'block';
+            nextButton.style.display = 'none';
+        }
+
+        /**
+         * Checks the user's submitted answer.
+         */
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value, 10);
+
+            // Clear previous feedback animation
+            feedbackMessage.classList.remove('fade-in');
+            // A trick to re-trigger the animation
+            void feedbackMessage.offsetWidth; 
+
+            if (isNaN(userAnswer)) {
+                feedbackMessage.textContent = 'Digite um número!';
+                feedbackMessage.className += ' text-orange-500 fade-in';
+                return;
+            }
+
+            if (userAnswer === currentProblem.answer) {
+                // Correct Answer
+                score++;
+                feedbackMessage.textContent = 'Correto! 🎉';
+                feedbackMessage.className += ' text-green-500 fade-in';
+                scoreDisplay.textContent = score;
+                
+                // Switch to "Next" button
+                answerInput.disabled = true;
+                checkButton.style.display = 'none';
+                nextButton.style.display = 'block';
+                nextButton.focus();
+
+            } else {
+                // Incorrect Answer
+                feedbackMessage.textContent = 'Ops! Tente de novo.';
+                feedbackMessage.className += ' text-red-500 fade-in';
+                answerInput.focus();
+                answerInput.select();
+            }
+        }
+        
+        // Event Listeners
+        checkButton.addEventListener('click', checkAnswer);
+        nextButton.addEventListener('click', generateProblem);
+        
+        // Allow pressing 'Enter' to check the answer
+        answerInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !answerInput.disabled) {
+                checkAnswer();
+            }
+        });
+
+        // Initial call to start the game
+        window.onload = generateProblem;
+    </script>
+
+</body>
+</html>
